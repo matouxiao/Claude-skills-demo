@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Skills Clone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .panel-content {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Skills 面板 */
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+
+        .upload-area.dragover {
+            background: #e8ebff;
+            border-color: #764ba2;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .skill-list {
+            margin-top: 20px;
+        }
+
+        .skill-item {
+            background: #f8f9ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .skill-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .skill-desc {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .skill-tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .skill-tag {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+
+        .skill-delete {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .skill-delete:hover {
+            background: #ff3838;
+        }
+
+        /* 聊天面板 */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9ff;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .skills-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 10px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Skills 管理面板 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="status-indicator"></span>
+                Skills 管理
+            </div>
+            <div class="panel-content">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div>拖拽文件夹或 SKILL.md 文件到这里</div>
+                    <div style="font-size: 12px; color: #999; margin-top: 5px;">或点击选择文件/文件夹</div>
+                    <input type="file" id="fileInput" style="display: none;" webkitdirectory directory>
+                </div>
+
+                <div style="border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                    <div style="font-weight: 600; margin-bottom: 10px; color: #333;">
+                        已安装的 Skills (<span id="skillCount">0</span>)
+                    </div>
+                    <div class="skill-list" id="skillList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 聊天面板 -->
+        <div class="panel">
+            <div class="panel-header">
+                💬 对话
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div style="text-align: center; color: #999; padding: 40px 20px;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">🤖</div>
+                    <div>使用国产大模型的 Claude Skills Clone</div>
+                    <div style="font-size: 12px; margin-top: 10px;">上传 skills 后开始对话</div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="chat-input-container">
+                    <input 
+                        type="text" 
+                        id="chatInput" 
+                        class="chat-input" 
+                        placeholder="输入你的问题..."
+                        onkeypress="if(event.key==='Enter') sendMessage()"
+                    >
+                    <button class="send-button" onclick="sendMessage()">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSkills();
+            setupUploadArea();
+        });
+
+        // 设置上传区域
+        function setupUploadArea() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const items = e.dataTransfer.items;
+                
+                // 检查是否拖拽的是文件或文件夹
+                if (items.length > 0) {
+                    const item = items[0];
+                    if (item.webkitGetAsEntry) {
+                        const entry = item.webkitGetAsEntry();
+                        if (entry.isDirectory) {
+                            handleDirectory(entry);
+                        } else {
+                            uploadFile(e.dataTransfer.files[0]);
+                        }
+                    } else {
+                        uploadFile(e.dataTransfer.files[0]);
+                    }
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    // 用户选择了文件夹
+                    findAndUploadSkillMd(e.target.files);
+                }
+            });
+        }
+
+        // 处理文件夹拖拽
+        function handleDirectory(entry) {
+            const files = [];
+            
+            function readEntries(dir) {
+                const reader = dir.createReader();
+                reader.readEntries(function(entries) {
+                    for (let entry of entries) {
+                        if (entry.isFile) {
+                            entry.file(function(file) {
+                                files.push(file);
+                            });
+                        } else if (entry.isDirectory) {
+                            readEntries(entry);
+                        }
+                    }
+                    
+                    // 如果当前目录遍历完毕，尝试上传
+                    if (files.length > 0) {
+                        setTimeout(() => findAndUploadSkillMd(files, entry.name), 100);
+                    }
+                });
+            }
+            
+            readEntries(entry);
+        }
+
+        // 在文件列表中找到 SKILL.md 并上传
+        function findAndUploadSkillMd(files, folderName = null) {
+            // 如果是通过文件选择器选择的文件夹
+            if (!folderName && files.length > 0) {
+                const firstFile = files[0];
+                if (firstFile.webkitRelativePath) {
+                    const pathParts = firstFile.webkitRelativePath.split('/');
+                    folderName = pathParts[0];
+                }
+            }
+            
+            // 寻找 SKILL.md 文件（不区分大小写）
+            const skillFile = Array.from(files).find(file => 
+                file.name.toLowerCase() === 'skill.md'
+            );
+            
+            if (skillFile) {
+                uploadFile(skillFile, folderName);
+            } else {
+                alert('未在文件夹中找到 SKILL.md 文件!');
+            }
+        }
+
+        // 上传文件
+        async function uploadFile(file, skillName = null) {
+            if (!file.name.endsWith('.md')) {
+                alert('只支持 .md 文件!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            if (skillName) {
+                formData.append('skill_name', skillName);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/skills/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`Skill "${data.skill_name}" 上传成功!`);
+                    loadSkills();
+                } else {
+                    alert(`上传失败: ${data.detail}`);
+                }
+            } catch (error) {
+                alert(`上传错误: ${error.message}`);
+            }
+        }
+
+        // 加载 skills 列表
+        async function loadSkills() {
+            try {
+                const response = await fetch(`${API_BASE}/api/skills`);
+                const data = await response.json();
+
+                const skillList = document.getElementById('skillList');
+                const skillCount = document.getElementById('skillCount');
+
+                skillCount.textContent = data.total;
+
+                if (data.skills.length === 0) {
+                    skillList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">暂无 skills</div>';
+                    return;
+                }
+
+                skillList.innerHTML = data.skills.map(skill => `
+                    <div class="skill-item">
+                        <div class="skill-name">${skill.name}</div>
+                        <div class="skill-desc">${skill.description}</div>
+                        ${skill.tags && skill.tags.length > 0 ? `
+                            <div class="skill-tags">
+                                ${skill.tags.map(tag => `<span class="skill-tag">${tag}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        <button class="skill-delete" onclick="deleteSkill('${skill.name}')">删除</button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('加载 skills 失败:', error);
+            }
+        }
+
+        // 删除 skill
+        async function deleteSkill(skillName) {
+            if (!confirm(`确定要删除 skill "${skillName}" 吗?`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/skills/${skillName}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('删除成功!');
+                    loadSkills();
+                } else {
+                    alert('删除失败!');
+                }
+            } catch (error) {
+                alert(`删除错误: ${error.message}`);
+            }
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // 显示用户消息
+            addMessage('user', message);
+            input.value = '';
+
+            // 显示加载状态
+            const loadingId = Date.now();
+            addMessage('assistant', '<div class="loading">思考中...</div>', loadingId);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+
+                // 移除加载消息
+                removeMessage(loadingId);
+
+                if (response.ok) {
+                    let content = data.answer;
+                    if (data.skills_used.length > 0) {
+                        content += `<div class="skills-badge">✨ 使用了: ${data.skills_used.join(', ')}</div>`;
+                    }
+                    addMessage('assistant', content);
+                } else {
+                    addMessage('assistant', `<div class="error">错误: ${data.detail}</div>`);
+                }
+            } catch (error) {
+                removeMessage(loadingId);
+                addMessage('assistant', `<div class="error">请求失败: ${error.message}</div>`);
+            }
+        }
+
+        // 添加消息
+        function addMessage(role, content, id = null) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            if (id) messageDiv.id = `msg-${id}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">${content}</div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // 移除消息
+        function removeMessage(id) {
+            const msg = document.getElementById(`msg-${id}`);
+            if (msg) msg.remove();
+        }
+    </script>
+</body>
+</html>
