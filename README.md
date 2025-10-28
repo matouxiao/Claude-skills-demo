@@ -8,6 +8,8 @@
 - 📊 **PPT自动生成**：支持两种PPT生成模式
   - **普通PPT**：适用于介绍、教学等非正式场合
   - **公司汇报PPT**：自动添加公司logo，适用于正式汇报
+  - <img width="1555" height="923" alt="image" src="https://github.com/user-attachments/assets/907b8f3e-48f1-472a-ba21-8bb2ae8464a9" />
+  生成的两个ppt可在文件夹中查看
 - 🔧 **工具调用机制**：使用GLM-4的function calling功能
 - 📁 **技能管理**：上传、管理、删除自定义技能
 - 💾 **缓存优化**：内存缓存技能元数据，提升性能
