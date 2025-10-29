@@ -268,77 +268,25 @@ def call_glm4_with_tools(messages: List[dict], tools: List[dict], max_tool_round
                     "tool_call_id": tool_call.get('id') if isinstance(tool_call, dict) else None
                 })
         
-        # 如果获取了技能内容，添加提示引导模型使用 execute_python_code
+        # 如果获取了技能内容，添加提示引导模型遵循SKILL.md
         if got_skill_content:
-            # 为 pptx 技能使用固定脚本+JSON数据方式
-            if 'pptx' in skills_used:
-                code_template = """import json
-
-# 步骤1：创建 PPT 数据（JSON格式）
-ppt_data = {
-    "output_file": "【文件名】.pptx",
-    "slides": [
-        {
-            "title": "【第1页主标题】",
-            "subtitle": "【第1页副标题】"
-        },
-        {
-            "title": "【第2页标题】",
-            "content": [
-                "【第2页第1点内容】",
-                "【第2页第2点内容】",
-                "【第2页第3点内容】"
-            ]
-        },
-        {
-            "title": "【第3页标题】",
-            "content": [
-                "【第3页第1点内容】",
-                "【第3页第2点内容】",
-                "【第3页第3点内容】"
-            ]
-        }
-    ]
-}
-
-# 步骤2：保存为 JSON 文件
-with open('ppt_data.json', 'w', encoding='utf-8') as f:
-    json.dump(ppt_data, f, ensure_ascii=False, indent=2)
-
-# 步骤3：使用固定脚本生成 PPT（保证正确使用模板）
-import subprocess
-import sys
-result = subprocess.run([sys.executable, 'generate_ppt_from_json.py', 'ppt_data.json'], 
-                       capture_output=True, text=True)
-print(result.stdout)
-if result.returncode != 0:
-    print("错误:", result.stderr)
-"""
-                working_msgs.append({
-                    "role": "system",
-                    "content": (
-                        "【使用固定脚本生成PPT】\n\n"
-                        "由于模型无法正确使用模板，现在改用固定脚本。\n"
-                        "你只需要填充以下代码模板中【】的内容：\n\n"
-                        f"```python\n{code_template}\n```\n\n"
-                        "只替换【】中的内容，不要修改代码结构。\n"
-                        "然后调用 execute_python_code 执行这段代码。"
-                    )
-                })
-            else:
-                working_msgs.append({
-                    "role": "system",
-                    "content": (
-                        "你已获取技能的完整操作指南。\n\n"
-                        "【重要说明】：\n"
-                        "1. 对于生成文件的任务（如 PPT、PDF、文档等），请生成完整的 Python 代码\n"
-                        "2. 然后调用 execute_python_code 工具执行这段代码，直接生成文件\n"
-                        "3. 代码中应包含完整的文件路径、内容生成逻辑和错误处理\n"
-                        "4. 根据用户的具体需求（主题、内容要点等）生成定制化的内容\n"
-                        "5. 执行成功后，告诉用户文件已生成及文件名\n\n"
-                        "现在，请严格按照指南生成代码并调用 execute_python_code 工具来完成任务。"
-                    )
-                })
+            working_msgs.append({
+                "role": "system",
+                "content": (
+                    "✅ 你已获取技能的完整操作指南（SKILL.md）。\n\n"
+                    "【强制要求】：\n"
+                    "1. 仔细阅读SKILL.md开头的「快速指南」部分\n"
+                    "2. 严格按照快速指南的3个步骤操作\n"
+                    "3. 使用SKILL.md提供的代码模板，只修改【】中的内容\n"
+                    "4. 不要自己编写新的代码，必须使用模板\n"
+                    "5. 如果SKILL.md明确禁止某种做法，绝对不能使用\n\n"
+                    "【执行流程】：\n"
+                    "- 步骤1：判断任务类型（根据SKILL.md的判断规则）\n"
+                    "- 步骤2：提取用户需求的内容\n"
+                    "- 步骤3：复制代码模板 → 填充【】内容 → 调用execute_python_code执行\n\n"
+                    "现在，请按照SKILL.md的快速指南完成任务。"
+                )
+            })
 
     # 超过回合仍未给出最终回答
     return {
@@ -457,11 +405,21 @@ def chat_with_skills(user_message: str) -> dict:
 
     # 提示：说明使用工具的策略
     system_prompt = (
-        "你是一个有帮助的助手。\n"
-        "如需判断技能，请先调用 list_skills_catalog 获取目录；匹配后再调用 get_skill_content(name) 读取正文；"
-        "如果无需技能，可直接回答。始终只选择一个技能，不要串联多个技能。\n\n"
-        "重要：当需要生成文件（如 PPT、PDF、文档等）时，使用 execute_python_code 工具直接执行代码并生成文件。"
-        "不要只给用户代码让他们手动执行，而是调用 execute_python_code 自动生成文件。"
+        "你是一个有帮助的助手。\n\n"
+        "【工作流程】\n"
+        "1. 先调用 list_skills_catalog 查看可用技能\n"
+        "2. 匹配到技能后，调用 get_skill_content(name) 获取完整指南\n"
+        "3. **严格遵循**SKILL.md中的步骤和代码模板\n"
+        "4. 使用 execute_python_code 执行代码生成文件\n\n"
+        "【重要规则】\n"
+        "- 必须完全按照SKILL.md的代码模板操作，不要自己编写代码\n"
+        "- 只修改模板中【】标记的内容，其他部分不得更改\n"
+        "- 如果SKILL.md明确禁止某种做法，绝对不能使用\n"
+        "- 始终只使用一个技能，不要串联多个技能\n\n"
+        "【生成文件时】\n"
+        "- 使用 execute_python_code 直接执行代码并生成文件\n"
+        "- 不要只给用户代码让他们手动执行\n"
+        "- 按照SKILL.md的快速指南操作，不要跳过步骤"
     )
 
     messages = [
@@ -484,125 +442,14 @@ async def root():
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """对话接口"""
+    """对话接口 - 通用技能路由"""
     try:
-        # 特殊处理：如果是生成PPT的请求，直接调用固定脚本
-        if any(keyword in request.message for keyword in ["公司汇报", "工作汇报", "述职", "转正", "PPT", "ppt"]):
-            result = handle_ppt_generation(request.message)
-            return ChatResponse(**result)
-        
+        # 所有请求统一走通用的Function Calling流程
+        # AI会自动判断是否需要使用技能，以及使用哪个技能
         result = chat_with_skills(request.message)
         return ChatResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-def handle_ppt_generation(user_message: str) -> dict:
-    """直接处理PPT生成请求，不使用AI生成代码"""
-    import json
-    import subprocess
-    import sys
-    
-    # 判断是否为公司汇报类PPT
-    company_report_keywords = [
-        "公司汇报", "工作汇报", "述职",
-        "转正", "晋升答辩", "答辩",
-        "季度汇报", "年度总结", "年终总结",
-        "项目汇报", "正式汇报", "部门汇报",
-        "公司logo", "公司模板"
-    ]
-    
-    is_company_report = any(keyword in user_message for keyword in company_report_keywords)
-    
-    # 使用AI提取内容
-    prompt = f"""根据用户需求提取PPT内容，以JSON格式返回。
-
-用户需求：{user_message}
-
-请以JSON格式返回，格式如下（直接返回JSON，不要其他解释）：
-{{
-  "title": "主标题",
-  "subtitle": "副标题",
-  "slide2_title": "第2页标题",
-  "slide2_content": ["第1点", "第2点", "第3点"],
-  "slide3_title": "第3页标题",
-  "slide3_content": ["第1点", "第2点", "第3点"]
-}}"""
-    
-    # 调用AI提取内容
-    response = client.chat.completions.create(
-        model="glm-4.6",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
-        max_tokens=2000
-    )
-    
-    content_text = response.choices[0].message.content.strip()
-    
-    # 尝试解析JSON
-    try:
-        # 清理可能的markdown代码块标记
-        if "```json" in content_text:
-            content_text = content_text.split("```json")[1].split("```")[0]
-        elif "```" in content_text:
-            content_text = content_text.split("```")[1].split("```")[0]
-        
-        content_data = json.loads(content_text.strip())
-        
-        # 构建PPT数据
-        ppt_data = {
-            "output_file": f"{content_data.get('title', '公司汇报')}.pptx",
-            "slides": [
-                {
-                    "title": content_data.get("title", "公司汇报"),
-                    "subtitle": content_data.get("subtitle", "工作总结")
-                },
-                {
-                    "title": content_data.get("slide2_title", "概况"),
-                    "content": content_data.get("slide2_content", ["内容1", "内容2"])
-                },
-                {
-                    "title": content_data.get("slide3_title", "展望"),
-                    "content": content_data.get("slide3_content", ["目标1", "目标2"])
-                }
-            ]
-        }
-        
-        # 保存JSON
-        with open('ppt_data.json', 'w', encoding='utf-8') as f:
-            json.dump(ppt_data, f, ensure_ascii=False, indent=2)
-        
-        # 调用固定脚本生成PPT（公司汇报类添加 --add-logo 参数）
-        cmd = [sys.executable, 'generate_ppt_from_json.py', 'ppt_data.json']
-        if is_company_report:
-            cmd.append('--add-logo')
-        
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        
-        if result.returncode == 0:
-            ppt_type = "公司汇报PPT（带logo）" if is_company_report else "普通PPT"
-            return {
-                "answer": f"[成功] {ppt_type}已生成：{ppt_data['output_file']}\n\n{result.stdout}\n\n内容包括：\n1. {content_data.get('title', '标题')}\n2. {content_data.get('slide2_title', '第2页')}\n3. {content_data.get('slide3_title', '第3页')}",
-                "skills_used": ["pptx"],
-                "model": "glm-4.6"
-            }
-        else:
-            return {
-                "answer": f"PPT生成失败：{result.stderr}",
-                "skills_used": ["pptx"],
-                "model": "glm-4.6"
-            }
-    
-    except Exception as e:
-        return {
-            "answer": f"处理失败：{str(e)}\n\n原始内容：{content_text}",
-            "skills_used": ["pptx"],
-            "model": "glm-4.6"
-        }
 
 @app.post("/api/skills/upload")
 async def upload_skill(file: UploadFile = File(...), skill_name: Optional[str] = None):

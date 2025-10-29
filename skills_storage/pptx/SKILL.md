@@ -6,43 +6,211 @@ license: Proprietary
 
 # PPT 演示文稿创建
 
+## ⚠️ 重要：必须遵守的规则
+
+**禁止直接使用python-pptx库手动创建PPT！**
+
+必须使用以下固定流程：
+1. 生成JSON数据
+2. 调用固定脚本 `skills_storage/pptx/generate_ppt_from_json.py`
+3. 根据PPT类型决定是否添加 `--add-logo` 参数
+
+---
+
+## ⚡ 快速指南：如何生成PPT（强制执行）
+
+当用户需要生成PPT时，**严格按照以下3步操作**：
+
+### 步骤1：判断PPT类型
+
+根据用户消息判断是"公司汇报类"还是"普通PPT"：
+
+**公司汇报类**（会添加logo）- 用户消息包含以下任一关键词：
+- "公司汇报"、"工作汇报"、"述职"
+- "转正"、"晋升答辩"、"答辩"  
+- "季度汇报"、"年度总结"、"年终总结"
+- "项目汇报"、"正式汇报"、"部门汇报"
+- 明确要求"添加公司logo"或"使用公司模板"
+
+**普通PPT**（不添加logo）- 其他所有情况：
+- 介绍类（"介绍深圳"、"介绍产品"）
+- 教学类、培训类
+- 个人展示、非正式场合
+
+### 步骤2：提取用户需求
+
+从用户消息中提取：
+- 主标题（PPT的主题）
+- 副标题（可选）
+- 第2页标题和内容要点（3-5个）
+- 第3页标题和内容要点（3-5个）
+
+### 步骤3：生成代码并执行
+
+⚠️ **强制要求**：使用以下代码模板，只修改【】中的内容，其他代码不得更改！
+
+```python
+import json
+import subprocess
+import sys
+
+# 填充PPT数据（只修改【】内的内容）
+ppt_data = {
+    "output_file": "【PPT文件名】.pptx",
+    "slides": [
+        {
+            "title": "【第1页主标题】",
+            "subtitle": "【第1页副标题】"
+        },
+        {
+            "title": "【第2页标题】",
+            "content": [
+                "【第2页内容1】",
+                "【第2页内容2】",
+                "【第2页内容3】"
+            ]
+        },
+        {
+            "title": "【第3页标题】",
+            "content": [
+                "【第3页内容1】",
+                "【第3页内容2】",
+                "【第3页内容3】"
+            ]
+        }
+    ]
+}
+
+# 保存JSON（不要修改）
+with open('ppt_data.json', 'w', encoding='utf-8') as f:
+    json.dump(ppt_data, f, ensure_ascii=False, indent=2)
+
+# 调用脚本（不要修改）
+cmd = [sys.executable, 'skills_storage/pptx/generate_ppt_from_json.py', 'ppt_data.json']
+
+# ⚠️ 关键：如果是公司汇报类，必须添加这行（去掉注释）
+# cmd.append('--add-logo')
+
+result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+print(result.stdout if result.returncode == 0 else result.stderr)
+```
+
+**判断规则**：
+- 用户消息包含"公司汇报"、"工作汇报"、"述职"、"转正"等关键词 → 去掉 `# cmd.append('--add-logo')` 前面的 `#`
+- 其他情况（介绍类、教学类等） → 保持该行被注释
+
+### 示例1：普通介绍PPT
+
+用户消息："帮我做个介绍深圳的PPT"
+
+```python
+import json
+import subprocess
+import sys
+
+ppt_data = {
+    "output_file": "魅力深圳.pptx",
+    "slides": [
+        {
+            "title": "魅力深圳",
+            "subtitle": "一座年轻而充满活力的城市"
+        },
+        {
+            "title": "城市概况",
+            "content": [
+                "位于广东省南部，毗邻香港",
+                "改革开放的窗口和试验田",
+                "人口超过1700万，平均年龄32岁"
+            ]
+        },
+        {
+            "title": "创新之都",
+            "content": [
+                "拥有华为、腾讯、大疆等科技巨头",
+                "国家创新型城市",
+                "粤港澳大湾区核心引擎"
+            ]
+        }
+    ]
+}
+
+with open('ppt_data.json', 'w', encoding='utf-8') as f:
+    json.dump(ppt_data, f, ensure_ascii=False, indent=2)
+
+cmd = [sys.executable, 'skills_storage/pptx/generate_ppt_from_json.py', 'ppt_data.json']
+# 介绍类PPT，不添加logo
+
+result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+print(result.stdout if result.returncode == 0 else result.stderr)
+```
+
+### 示例2：公司汇报PPT（带logo）
+
+用户消息："帮我做个2023年度公司绩效汇报"
+
+```python
+import json
+import subprocess
+import sys
+
+ppt_data = {
+    "output_file": "2023年度公司绩效汇报.pptx",
+    "slides": [
+        {
+            "title": "2023年度绩效汇报",
+            "subtitle": "奋进新征程 建功新时代"
+        },
+        {
+            "title": "年度业绩概览",
+            "content": [
+                "营收增长35%，达到10亿元",
+                "净利润增长42%",
+                "市场占有率提升至行业第三"
+            ]
+        },
+        {
+            "title": "未来展望",
+            "content": [
+                "深化数字化转型",
+                "拓展国际市场",
+                "加大研发投入"
+            ]
+        }
+    ]
+}
+
+with open('ppt_data.json', 'w', encoding='utf-8') as f:
+    json.dump(ppt_data, f, ensure_ascii=False, indent=2)
+
+cmd = [sys.executable, 'skills_storage/pptx/generate_ppt_from_json.py', 'ppt_data.json']
+cmd.append('--add-logo')  # 公司汇报类，添加logo
+
+result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+print(result.stdout if result.returncode == 0 else result.stderr)
+```
+
+---
+
+## 📖 说明
+
+上面的**快速指南**是唯一需要遵循的流程。下面的内容仅供参考，**不要直接使用**。
+
+---
+
+## ⚠️ 以下内容仅供参考（不要在实际操作中使用）
+
+下面的内容是技术文档和参考资料，用于了解PPT生成的底层原理。
+**在实际操作时，必须使用上面的快速指南，不要使用下面的代码示例。**
+
+---
+
 ## 概述
 
 当用户需要创建演示文稿时，根据场景选择合适的创建方式：
 - **公司汇报类**：添加公司logo（logo1.png）到每页右上角
 - **普通PPT**：不添加logo，直接生成
 
-## 🔍 判断规则：公司汇报类 vs 普通PPT
-
-### 公司汇报类（需要添加logo）
-
-**触发关键词**（用户消息包含以下任一词汇）：
-- "公司汇报"、"工作汇报"、"述职"
-- "转正"、"晋升答辩"、"答辩"
-- "季度汇报"、"年度总结"、"年终总结"
-- "项目汇报"、"正式汇报"、"部门汇报"
-- 明确要求"添加公司logo"或"使用公司模板"
-
-**特征**：
-- 正式场合
-- 需要体现公司形象
-- 每页右上角添加 `logo1.png`
-
-### 普通PPT（不添加logo）
-
-**触发场景**：
-- 介绍类PPT（如"介绍深圳"、"介绍产品"）
-- 教学类、培训类PPT
-- 个人展示、非正式场合
-- 创意型、娱乐型演示
-- 没有提到上述公司汇报关键词
-
-**特征**：
-- 非正式场合
-- 不需要公司标识
-- 清爽简洁的设计
-
-## ⚠️ 使用模板的强制规则
+## ⚠️ 使用模板的强制规则（仅供参考）
 
 **使用公司汇报模板时，必须严格按照以下代码模板（复制并修改内容）：**
 

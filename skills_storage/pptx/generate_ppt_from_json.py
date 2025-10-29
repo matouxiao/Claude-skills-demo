@@ -41,8 +41,9 @@ def generate_ppt_from_json(json_file, add_logo=False):
     prs.slide_width = Inches(13.33)
     prs.slide_height = Inches(7.5)
     
-    # logo路径
-    logo_path = 'skills_storage/pptx/temple/logo1.png'
+    # logo路径（相对于脚本所在目录）
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(script_dir, 'temple', 'logo1.png')
     
     if add_logo:
         print("[OK] 创建公司汇报PPT（带logo）")
