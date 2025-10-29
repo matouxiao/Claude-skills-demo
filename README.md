@@ -19,7 +19,8 @@
 - 📄 **灵活页数**：支持任意页数（3页、5页、10页...）
 - 🎨 **统一样式**：使用固定脚本保证PPT质量
 
-<img width="1555" height="923" alt="image" src="https://github.com/user-attachments/assets/907b8f3e-48f1-472a-ba21-8bb2ae8464a9" />
+![Uploading image.png…]()
+
 
 *生成的PPT示例可在项目文件夹中查看*
 
