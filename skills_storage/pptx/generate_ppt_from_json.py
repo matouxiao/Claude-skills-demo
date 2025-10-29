@@ -50,82 +50,47 @@ def generate_ppt_from_json(json_file, add_logo=False):
     else:
         print("[OK] 创建普通PPT（不带logo）")
     
-    # 第1页 - 封面
-    if len(data['slides']) > 0:
-        slide_data = data['slides'][0]
-        slide = prs.slides.add_slide(prs.slide_layouts[0])  # 标题幻灯片布局
-        
-        # 添加标题
-        title = slide.shapes.title
-        title.text = slide_data.get('title', '标题')
-        title.text_frame.paragraphs[0].font.size = Pt(44)
-        title.text_frame.paragraphs[0].font.bold = True
-        
-        # 添加副标题
-        if len(slide.placeholders) > 1:
-            subtitle = slide.placeholders[1]
-            subtitle.text = slide_data.get('subtitle', '')
-            subtitle.text_frame.paragraphs[0].font.size = Pt(28)
-        
-        # 仅公司汇报类添加logo
-        if add_logo:
-            add_logo_to_slide(slide, logo_path)
-    
-    # 第2页 - 内容页
-    if len(data['slides']) > 1:
-        slide_data = data['slides'][1]
-        slide = prs.slides.add_slide(prs.slide_layouts[1])  # 标题和内容布局
-        
-        # 添加标题
-        title = slide.shapes.title
-        title.text = slide_data.get('title', '内容')
-        title.text_frame.paragraphs[0].font.size = Pt(36)
-        title.text_frame.paragraphs[0].font.bold = True
-        
-        # 添加内容
-        if len(slide.placeholders) > 1:
-            content_placeholder = slide.placeholders[1]
-            tf = content_placeholder.text_frame
-            tf.clear()
+    # 循环处理所有幻灯片
+    for slide_idx, slide_data in enumerate(data['slides']):
+        # 第1页使用标题布局（封面），其他页使用标题和内容布局
+        if slide_idx == 0:
+            slide = prs.slides.add_slide(prs.slide_layouts[0])  # 标题幻灯片布局
             
-            for i, item in enumerate(slide_data.get('content', [])):
-                if i == 0:
-                    tf.text = f"• {item}"
-                else:
-                    p = tf.add_paragraph()
-                    p.text = f"• {item}"
-                    p.level = 0
-                    p.font.size = Pt(18)
-        
-        # 仅公司汇报类添加logo
-        if add_logo:
-            add_logo_to_slide(slide, logo_path)
-    
-    # 第3页 - 内容页
-    if len(data['slides']) > 2:
-        slide_data = data['slides'][2]
-        slide = prs.slides.add_slide(prs.slide_layouts[1])  # 标题和内容布局
-        
-        # 添加标题
-        title = slide.shapes.title
-        title.text = slide_data.get('title', '内容')
-        title.text_frame.paragraphs[0].font.size = Pt(36)
-        title.text_frame.paragraphs[0].font.bold = True
-        
-        # 添加内容
-        if len(slide.placeholders) > 1:
-            content_placeholder = slide.placeholders[1]
-            tf = content_placeholder.text_frame
-            tf.clear()
+            # 添加标题
+            title = slide.shapes.title
+            title.text = slide_data.get('title', '标题')
+            title.text_frame.paragraphs[0].font.size = Pt(44)
+            title.text_frame.paragraphs[0].font.bold = True
             
-            for i, item in enumerate(slide_data.get('content', [])):
-                if i == 0:
-                    tf.text = f"• {item}"
-                else:
-                    p = tf.add_paragraph()
-                    p.text = f"• {item}"
-                    p.level = 0
-                    p.font.size = Pt(18)
+            # 添加副标题
+            if 'subtitle' in slide_data and len(slide.placeholders) > 1:
+                subtitle = slide.placeholders[1]
+                subtitle.text = slide_data.get('subtitle', '')
+                subtitle.text_frame.paragraphs[0].font.size = Pt(28)
+        else:
+            # 内容页
+            slide = prs.slides.add_slide(prs.slide_layouts[1])  # 标题和内容布局
+            
+            # 添加标题
+            title = slide.shapes.title
+            title.text = slide_data.get('title', '内容')
+            title.text_frame.paragraphs[0].font.size = Pt(36)
+            title.text_frame.paragraphs[0].font.bold = True
+            
+            # 添加内容
+            if 'content' in slide_data and len(slide.placeholders) > 1:
+                content_placeholder = slide.placeholders[1]
+                tf = content_placeholder.text_frame
+                tf.clear()
+                
+                for i, item in enumerate(slide_data.get('content', [])):
+                    if i == 0:
+                        tf.text = f"• {item}"
+                    else:
+                        p = tf.add_paragraph()
+                        p.text = f"• {item}"
+                        p.level = 0
+                        p.font.size = Pt(18)
         
         # 仅公司汇报类添加logo
         if add_logo:
